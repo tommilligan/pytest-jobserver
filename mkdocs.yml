@@ -1,0 +1,10 @@
+site_name: pytest-jobserver
+site_description: Parellise tests with posix jobserver.
+site_author: Tom Milligan
+
+theme: gitbook
+
+repo_url: https://github.com/tommilligan/pytest-jobserver
+
+pages:
+  - Home: index.md
