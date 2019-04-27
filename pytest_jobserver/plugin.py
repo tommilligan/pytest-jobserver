@@ -10,12 +10,8 @@ def pytest_addoption(parser):
         help="Named pipe to use as jobserver.",
     )
 
-    parser.addini("jobserver", "Named pipe to use as jobserver.")
-
 
 class JobserverPlugin(object):
-    """Simple plugin to defer pytest-xdist hook functions."""
-
     def __init__(self, file):
         self.jobserver = open(file, "r+b", 0)
 
