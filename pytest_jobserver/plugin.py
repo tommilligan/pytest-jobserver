@@ -23,7 +23,7 @@ class JobserverPlugin(object):
     def pytest_runtest_protocol(self, item):
         token = self.jobserver.read(1)
         yield
-        self.jobserver.write(b"I")
+        self.jobserver.write(token)
 
 
 def pytest_configure(config):
