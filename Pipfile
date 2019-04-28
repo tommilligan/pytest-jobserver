@@ -7,9 +7,10 @@ verify_ssl = true
 black = "==18.9b0"
 codecov = "~=2.0"
 flake8 = "~=3.7"
-tox = "~=3.5"
+mypy = "~=0.701"
 pytest-cov = "~=2.6"
 pytest-xdist = "~=1.28"
+tox = "~=3.5"
 twine = "~=1.13"
 wheel = "~=0.33"
 
