@@ -22,7 +22,8 @@ matrix:
       env: TOX_ENV=flake8
 
 install:
-  - pip install tox
+  - pip install "pipenv==2018.11.26"
+  - pipenv install --dev --deploy
 
 script:
   - tox -e $TOX_ENV
