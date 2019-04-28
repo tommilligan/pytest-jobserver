@@ -43,7 +43,7 @@ def pytest_configure(config):
 
         if is_fifo(jobserver_path) is False:
             raise pytest.UsageError(
-                "jobserver is not a fifo/named pipe: {}".format(jobserver_path)
+                "jobserver is not a fifo: {}".format(jobserver_path)
             )
 
         if is_rw_ok(jobserver_path) is False:
