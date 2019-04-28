@@ -3,12 +3,6 @@
 
 environment:
   matrix:
-    - PYTHON: "C:\\Python34"
-      TOX_ENV: "py34"
-
-    - PYTHON: "C:\\Python35"
-      TOX_ENV: "py35"
-
     - PYTHON: "C:\\Python36"
       TOX_ENV: "py36"
 
@@ -21,7 +15,7 @@ init:
 
 install:
   - "%PYTHON%/Scripts/easy_install -U pip"
-  - "%PYTHON%/Scripts/pip install 'pipenv==2018.11.26'"
+  - "%PYTHON%/Scripts/pip install \"pipenv==2018.11.26\""
   - "%PYTHON%/Scripts/pipenv install --dev --deploy"
 
 build: false  # Not a C# project, build stuff at the test step instead.
