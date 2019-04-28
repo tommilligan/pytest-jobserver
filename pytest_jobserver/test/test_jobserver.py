@@ -1,8 +1,15 @@
 import os
 import time
+from typing import Any, NewType
+
+FileDescriptor = NewType("FileDescriptor", int)
+TestDir = Any
 
 
-def make_jobserver(dir_, name, size):
+# Test hekpers
+
+
+def make_jobserver(dir_: str, name: str, size: int) -> FileDescriptor:
     """Create a fifo with the given name and directory. Return a filehandle.
 
     :param str dir_: Directory to create jobserver fifo in.
@@ -20,16 +27,19 @@ def make_jobserver(dir_, name, size):
     tokens = b"X" * size
     os.write(fifo, tokens)
 
-    return fifo
+    return FileDescriptor(fifo)
 
 
-def test_help_message(testdir):
+# Actual tests
+
+
+def test_help_message(testdir: TestDir) -> None:
     result = testdir.runpytest("--help")
     # Check our options have been registered
     result.stdout.fnmatch_lines(["jobserver:", "*--jobserver*"])
 
 
-def test_server(testdir):
+def test_server(testdir: TestDir) -> None:
     testdir.makepyfile(
         """
         import pytest
@@ -46,7 +56,7 @@ def test_server(testdir):
     assert result.ret == 0
 
 
-def test_server_xdist(testdir):
+def test_server_xdist(testdir: TestDir) -> None:
     testdir.makepyfile(
         """
         from time import sleep
@@ -67,7 +77,7 @@ def test_server_xdist(testdir):
     """
     )
 
-    def time_with_tokens(tokens):
+    def time_with_tokens(tokens: int) -> float:
         jobserver_name = "jobserver_{}".format(tokens)
         make_jobserver(testdir.tmpdir, jobserver_name, tokens)
 
@@ -83,7 +93,7 @@ def test_server_xdist(testdir):
     assert time_with_tokens(3) < time_with_tokens(2) < time_with_tokens(1)
 
 
-def test_server_not_found(testdir):
+def test_server_not_found(testdir: TestDir) -> None:
     testdir.makepyfile(
         """
         import pytest
@@ -99,7 +109,7 @@ def test_server_not_found(testdir):
     assert result.ret == 4
 
 
-def test_server_not_fifo(testdir):
+def test_server_not_fifo(testdir: TestDir) -> None:
     testdir.makefile(".txt", jobserver="X")
     testdir.makepyfile(
         """

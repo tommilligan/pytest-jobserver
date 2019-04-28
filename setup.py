@@ -5,6 +5,8 @@ import os
 
 from setuptools import setup
 
+from pytest_jobserver.metadata import VERSION
+
 
 def read(fname):
     file_path = os.path.join(os.path.dirname(__file__), fname)
@@ -13,7 +15,7 @@ def read(fname):
 
 setup(
     name="pytest-jobserver",
-    version="0.1.0",
+    version=VERSION,
     author="Tom Milligan",
     author_email="code@tommilligan.net",
     maintainer="Tom Milligan",
@@ -31,16 +33,12 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Testing",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "Operating System :: OS Independent",
+        "Operating System :: POSIX",
+        "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: Apache Software License",
     ],
     entry_points={"pytest11": ["jobserver = pytest_jobserver.plugin"]},
