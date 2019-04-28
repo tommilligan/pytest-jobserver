@@ -1,0 +1,171 @@
+version: 2.1
+
+_docker_python_default: &docker_python_default
+  docker:
+    - image: circleci/python:3.7
+
+_filters_any: &filters_any
+  filters:
+    tags:
+      only: /.*/
+
+_filters_version_tag: &filters_version_tag
+  filters:
+    tags:
+      only: /v[0-9]+(\.[0-9]+)*/
+    branches:
+      ignore: /.*/
+
+workflows:
+  build_and_deploy:
+    jobs:
+      # First test triggered by a commit
+      - test:
+          name: test-3.7
+          tag: "3.7"
+          version: "3.7"
+          # required as deploy has tags version filter
+          <<: *filters_any
+      # Other test environments in parallel
+      - test:
+          name: test-3.6
+          tag: "3.6"
+          version: "3.6"
+          requires:
+            - test-3.7
+          <<: *filters_any
+      - test:
+          name: test-3.8
+          tag: "rc"
+          version: "3.8"
+          requires:
+            - test-3.7
+          <<: *filters_any
+      # Build packages
+      - build:
+          requires:
+            - test-3.6
+            - test-3.7
+            - test-3.8
+          <<: *filters_any
+      # Reinstall the generated packages and test
+      - integrate:
+          name: integrate-local
+          make_install: package-install
+          requires:
+            - build
+          <<: *filters_any
+      # Deploy if tagged
+      - deploy:
+          requires:
+            - integrate-local
+          <<: *filters_version_tag
+      # Reinstall from pypi and test
+      - integrate:
+          name: integrate-pypi
+          make_install: pypi-install
+          requires:
+            - deploy
+          <<: *filters_version_tag
+
+jobs:
+  test:
+    parameters:
+      tag:
+        type: string
+      version:
+        type: string
+    docker:
+      - image: circleci/python:<< parameters.tag >>
+    steps:
+      - checkout
+      - restore_cache:
+          key: v1-dependency-cache-<< parameters.version >>-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: install python dependencies
+          command: |
+            python<< parameters.version >> -m venv ~/venv
+            . ~/venv/bin/activate
+            make dev
+      - save_cache:
+          key: v1-dependency-cache-<< parameters.version >>-{{ checksum "Pipfile.lock" }}
+          paths:
+            - "~/venv"
+      - run:
+          name: run tests
+          command: |
+            . ~/venv/bin/activate
+            make test
+            pip install .
+            codecov
+  build:
+    <<: *docker_python_default
+    steps:
+      - checkout
+      - restore_cache:
+          key: v1-dependency-cache-3.7-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: install python dependencies
+          command: |
+            python3 -m venv ~/venv
+            . ~/venv/bin/activate
+            make dev
+      - save_cache:
+          key: v1-dependency-cache-3.7-{{ checksum "Pipfile.lock" }}
+          paths:
+            - "~/venv"
+      - run:
+          name: generate coverage and package data
+          command: |
+            . ~/venv/bin/activate
+            make test
+            make coverage
+            make package
+      - persist_to_workspace:
+          root: "~"
+          paths:
+            - project/dist
+            - project/integrate
+            - venv
+  integrate:
+    parameters:
+      make_install:
+        type: string
+    <<: *docker_python_default
+    steps:
+      - checkout
+      - attach_workspace:
+          at: "~"
+      - run:
+          name: install prebuilt package
+          command: |
+            . ~/venv/bin/activate
+            make uninstall
+            make PYTEST_JOBSERVER_VERSION=${CIRCLE_TAG:1} << parameters.make_install >>
+      - run:
+          name: run integration tests
+          command: |
+            . ~/venv/bin/activate
+            make integrate
+  deploy:
+    <<: *docker_python_default
+    steps:
+      - checkout
+      - attach_workspace:
+          at: "~"
+      - run:
+          name: verify git tag vs. version
+          command: |
+            [[ "$CIRCLE_TAG" == "v$(python -c 'from pytest_jobserver.metadata import VERSION; print(VERSION)')" ]]
+      - run:
+          name: upload to pypi
+          command: |
+            . ~/venv/bin/activate
+            make upload
+      # We don't need our built packages anymore
+      # so we drop them from the workspace
+      - persist_to_workspace:
+          root: "~"
+          paths:
+            - project/integrate
+            - venv
