@@ -2,7 +2,7 @@ import os
 import time
 from typing import Any
 
-from pytest_jobserver.plugin import is_fifo, is_rw_ok
+from pytest_jobserver.filesystem import is_fifo, is_rw_ok
 
 TestDir = Any
 
@@ -21,7 +21,7 @@ def make_jobserver(dir_: str, name: str, size: int) -> str:
     fifo_path = os.path.join(dir_, name)
     os.mkfifo(fifo_path)
 
-    # Open it as noblocking
+    # Open it as nonblocking, so we can write tokens into it straight away
     fifo = os.open(fifo_path, os.O_RDWR | os.O_NONBLOCK)
 
     # Write some tokens into it

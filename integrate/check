@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -ex
+
+assert_float_lt() {
+  python -c "assert $1 < $2"
+}
+
+TIME_TEST="make test"
+
+# As this test could be slightly flaky to find a failure, run it a few times
+# We are testing that the tests complete faster with three tokens than with two
+for i in {1..5}; do
+  TIME_TOKENS_3=`${TIME_TEST} -j3`
+  TIME_TOKENS_2=`${TIME_TEST} -j2`
+  assert_float_lt "$TIME_TOKENS_2" "$TIME_TOKENS_3"
+done

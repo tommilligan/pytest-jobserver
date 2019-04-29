@@ -16,6 +16,9 @@ dev:
 	pipenv install --dev --deploy
 	pip install -e .
 
+integrate:
+	cd integrate && $(MAKE) check
+
 lint:
 	black .
 
