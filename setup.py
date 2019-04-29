@@ -24,6 +24,7 @@ setup(
     url="https://github.com/tommilligan/pytest-jobserver",
     description="Parellise tests with posix jobserver.",
     long_description=read("README.md"),
+    long_description_content_type="text/markdown",
     py_modules=["pytest_jobserver"],
     python_requires=">=3.4",
     install_requires=["pytest"],
