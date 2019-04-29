@@ -1,15 +1,16 @@
 import os
 import time
-from typing import Any, NewType
+from typing import Any
 
-FileDescriptor = NewType("FileDescriptor", int)
+from pytest_jobserver.plugin import is_fifo, is_rw_ok
+
 TestDir = Any
 
 
 # Test hekpers
 
 
-def make_jobserver(dir_: str, name: str, size: int) -> FileDescriptor:
+def make_jobserver(dir_: str, name: str, size: int) -> str:
     """Create a fifo with the given name and directory. Return a filehandle.
 
     :param str dir_: Directory to create jobserver fifo in.
@@ -27,10 +28,25 @@ def make_jobserver(dir_: str, name: str, size: int) -> FileDescriptor:
     tokens = b"X" * size
     os.write(fifo, tokens)
 
-    return FileDescriptor(fifo)
+    return fifo_path
 
 
 # Actual tests
+
+
+def test_is_fifo(testdir: TestDir) -> None:
+    fifo_path = make_jobserver(testdir.tmpdir, "jobserver_fifo", 0)
+    assert is_fifo(fifo_path) is True
+
+    not_fifo_path = testdir.makefile(".txt", jobserver="X")
+    assert is_fifo(not_fifo_path) is False
+
+
+def test_is_rw_ok(testdir: TestDir) -> None:
+    fifo_path = make_jobserver(testdir.tmpdir, "jobserver_fifo", 0)
+    assert is_rw_ok(fifo_path) is True
+
+    assert is_rw_ok("/") is False
 
 
 def test_help_message(testdir: TestDir) -> None:
