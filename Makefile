@@ -8,6 +8,7 @@ clean:
 	rm -rf dist/*
 
 coverage:
+	coverage run --source pytest_jobserver -m py.test
 	codecov
 
 dev:
@@ -32,7 +33,7 @@ test:
 	black --check --diff .
 	flake8
 	mypy pytest_jobserver
-	pytest --cov=./ pytest_jobserver
+	pytest pytest_jobserver
 
 upload:
 	twine upload dist/*
