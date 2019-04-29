@@ -3,5 +3,14 @@
 check:
 	+./check
 
-test:
-	+/usr/bin/time --format %e -- pytest -s
+testA:
+	+pytest -s -n2
+
+testB:
+	+pytest -s -n2
+
+test: testA
+	
+	    
+test2: testA testB
+	

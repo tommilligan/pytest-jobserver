@@ -9,6 +9,7 @@ from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 
 from .filesystem import is_fifo, is_rw_ok
+from .load_scheduler import JobserverLoadScheduling
 from .metadata import VERSION
 
 __version__ = VERSION
@@ -37,6 +38,16 @@ class JobserverPlugin(object):
         token = os.read(self._fd_read, 1)
         yield
         os.write(self._fd_write, token)
+
+
+class JobserverXdistPlugin(object):
+    def __init__(self, fds: FileDescriptorsRW):
+        self._fds = fds
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_xdist_make_scheduler(self, config: Config, log):  # type: ignore
+        """ return a node scheduler implementation """
+        return JobserverLoadScheduling(config, log, self._fds)  # type: ignore
 
 
 def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
@@ -87,4 +98,8 @@ def pytest_configure(config: Config) -> None:
     jobserver_fds = jobserver_from_options(config) or jobserver_from_env()
     if jobserver_fds:
         print("Configuring jobserver with fds: {}".format(jobserver_fds))
-        config.pluginmanager.register(JobserverPlugin(jobserver_fds))
+        if config.pluginmanager.hasplugin("xdist"):
+            plugin: Any = JobserverXdistPlugin(jobserver_fds)
+        else:
+            plugin = JobserverPlugin(jobserver_fds)
+        config.pluginmanager.register(plugin)

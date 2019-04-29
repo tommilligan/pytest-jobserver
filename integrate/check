@@ -2,16 +2,8 @@
 
 set -ex
 
-assert_float_lt () {
-  python -c "assert $1 < $2"
-}
+# Single test master
+make test -j 9
 
-TIME_TEST="/usr/bin/time -f %U -- make test"
-
-# As this test could be slightly flaky to find a failure, run it a few times
-# We are testing that the tests complete faster with three tokens than with two
-# for i in {1..5}; do
-  TIME_TOKENS_3=`${TIME_TEST} -j 8`
-  TIME_TOKENS_2=`${TIME_TEST} -j 4`
-  # assert_float_lt "$TIME_TOKENS_2" "$TIME_TOKENS_3"
-# done
+# Two test masters, linked by the jobserver
+make test2 -j 9

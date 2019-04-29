@@ -1,5 +1,4 @@
 import os
-import time
 from typing import Any
 
 from pytest_jobserver.filesystem import is_fifo, is_rw_ok
@@ -80,7 +79,7 @@ def test_server_xdist(testdir: TestDir) -> None:
         import pytest
 
         def pause():
-            sleep(1)
+            sleep(0.5)
 
         def test_0(request):
             pause()
@@ -90,23 +89,21 @@ def test_server_xdist(testdir: TestDir) -> None:
 
         def test_2(request):
             pause()
+
+        def test_3(request):
+            pause()
+
+        def test_4(request):
+            pause()
+
+        def test_5(request):
+            pause()
     """
     )
 
-    def time_with_tokens(tokens: int) -> float:
-        jobserver_name = "jobserver_{}".format(tokens)
-        make_jobserver(testdir.tmpdir, jobserver_name, tokens)
-
-        start = time.time()
-        # Run with 3 xdist workers, so tokens is the limiting factor
-        result = testdir.runpytest("-v", "--jobserver", jobserver_name, "-n3")
-        end = time.time()
-        duration = end - start
-
-        assert result.ret == 0
-        return duration
-
-    assert time_with_tokens(3) < time_with_tokens(2) < time_with_tokens(1)
+    make_jobserver(testdir.tmpdir, "jobserver_fifo", 4)
+    result = testdir.runpytest("-v", "--jobserver", "jobserver_fifo", "-n2")
+    assert result.ret == 0
 
 
 def test_server_not_found(testdir: TestDir) -> None:
