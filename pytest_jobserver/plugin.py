@@ -1,5 +1,7 @@
+import argparse
 import os
-from typing import Any, Iterator, NewType, Optional
+import shlex
+from typing import Any, Iterator, NewType, Optional, Tuple
 
 import pytest
 from _pytest.config import Config
@@ -12,6 +14,8 @@ from .metadata import VERSION
 __version__ = VERSION
 
 FileDescriptor = NewType("FileDescriptor", int)
+# A 2-tuple of file descriptors, representing a read/write pair
+FileDescriptorsRW = Tuple[FileDescriptor, FileDescriptor]
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -25,17 +29,17 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 class JobserverPlugin(object):
-    def __init__(self, fd: FileDescriptor):
-        self._fifo = fd
+    def __init__(self, fds: FileDescriptorsRW):
+        self._fd_read, self._fd_write = fds
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
     def pytest_runtest_protocol(self, item: Item) -> Iterator[Any]:
-        token = os.read(self._fifo, 1)
+        token = os.read(self._fd_read, 1)
         yield
-        os.write(self._fifo, token)
+        os.write(self._fd_write, token)
 
 
-def jobserver_from_options(config: Config) -> Optional[FileDescriptor]:
+def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
     jobserver_path = config.getoption("jobserver", default=None)
     if jobserver_path is None:
         return None
@@ -51,10 +55,36 @@ def jobserver_from_options(config: Config) -> Optional[FileDescriptor]:
             "jobserver is not read/writeable to current user: {}".format(jobserver_path)
         )
 
-    return FileDescriptor(os.open(jobserver_path, os.O_RDWR))
+    fd_rw = FileDescriptor(os.open(jobserver_path, os.O_RDWR))
+    return (fd_rw, fd_rw)
+
+
+def jobserver_from_env() -> Optional[FileDescriptorsRW]:
+    makeflags = (
+        os.environ.get("CARGO_MAKEFLAGS")
+        or os.environ.get("MAKEFLAGS")
+        or os.environ.get("MFLAGS")
+    )
+
+    if makeflags is None:
+        return None
+
+    parser = argparse.ArgumentParser(prog="makeflags")
+    parser.add_argument("--jobserver-fds", default=None)
+    parser.add_argument("--jobserver-auth", default=None)
+    args, _ = parser.parse_known_args(shlex.split(makeflags))
+
+    fds = args.jobserver_fds or args.jobserver_auth
+    if fds is None:
+        return None
+
+    fd_read, fd_write = tuple(FileDescriptor(int(fd)) for fd in fds.split(","))
+
+    return (fd_read, fd_write)
 
 
 def pytest_configure(config: Config) -> None:
-    jobserver_fd = jobserver_from_options(config)
-    if jobserver_fd:
-        config.pluginmanager.register(JobserverPlugin(jobserver_fd))
+    jobserver_fds = jobserver_from_options(config) or jobserver_from_env()
+    if jobserver_fds:
+        print("Configuring jobserver with fds: {}".format(jobserver_fds))
+        config.pluginmanager.register(JobserverPlugin(jobserver_fds))

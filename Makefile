@@ -17,7 +17,7 @@ dev:
 	pip install -e .
 
 integrate:
-	cd integrate && $(MAKE) check
+	+cd integrate && $(MAKE) check
 
 lint:
 	black .
