@@ -22,7 +22,8 @@ class JobserverLoadScheduling(LoadScheduling):
             del self.pending[:num]
             self.node2pending[node].extend(tests_per_node)
             # jobserver
-            token = os.read(self._fd_read, num)
-            self._tokens.append(token)
+            for _ in range(num):
+                token = os.read(self._fd_read, 1)
+                self._tokens.append(token)
             # jobserver
             node.send_runtest_some(tests_per_node)
