@@ -1,22 +1,18 @@
 import argparse
 import os
 import shlex
-from typing import Any, Iterator, NewType, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
-from _pytest.nodes import Item
 
-from .filesystem import is_fifo, is_rw_ok
-from .load_scheduler import JobserverLoadScheduling
+from .filesystem import FileDescriptor, FileDescriptorsRW, is_fifo, is_rw_ok
 from .metadata import VERSION
+from .plugin.plain import JobserverPlugin
+from .plugin.xdist import JobserverXdistPlugin
 
 __version__ = VERSION
-
-FileDescriptor = NewType("FileDescriptor", int)
-# A 2-tuple of file descriptors, representing a read/write pair
-FileDescriptorsRW = Tuple[FileDescriptor, FileDescriptor]
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -27,27 +23,6 @@ def pytest_addoption(parser: Parser) -> None:
         metavar="FILE",
         help="Named pipe to use as jobserver.",
     )
-
-
-class JobserverPlugin(object):
-    def __init__(self, fds: FileDescriptorsRW):
-        self._fd_read, self._fd_write = fds
-
-    @pytest.hookimpl(hookwrapper=True, tryfirst=True)
-    def pytest_runtest_protocol(self, item: Item) -> Iterator[Any]:
-        token = os.read(self._fd_read, 1)
-        yield
-        os.write(self._fd_write, token)
-
-
-class JobserverXdistPlugin(object):
-    def __init__(self, fds: FileDescriptorsRW):
-        self._fds = fds
-
-    @pytest.hookimpl(tryfirst=True)
-    def pytest_xdist_make_scheduler(self, config: Config, log):  # type: ignore
-        """ return a node scheduler implementation """
-        return JobserverLoadScheduling(config, log, self._fds)  # type: ignore
 
 
 def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:

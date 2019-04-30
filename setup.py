@@ -42,5 +42,5 @@ setup(
         "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: Apache Software License",
     ],
-    entry_points={"pytest11": ["jobserver = pytest_jobserver.plugin"]},
+    entry_points={"pytest11": ["jobserver = pytest_jobserver.configure"]},
 )
