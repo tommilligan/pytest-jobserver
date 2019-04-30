@@ -1,9 +1,41 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-set -ex
+import math
+import subprocess
+import time
+from typing import Sequence
+
+
+def time_subprocess(args: Sequence[str]) -> float:
+    start = time.time()
+    subprocess.run(args, check=True)
+    end = time.time()
+    duration = end - start
+    print("Integration test subprocess duration: {}".format(duration))
+    return duration
+
 
 # Single test master
-make test -j 9
+# Sequential
+time_single = time_subprocess(["make", "test"])
+# Parallel, unlimited by tokens
+time_single_5_tokens = time_subprocess(["make", "test", "-j", "5"])
 
 # Two test masters, linked by the jobserver
-make test2 -j 9
+# Sequential
+time_double = time_subprocess(["make", "test2"])
+# Parallel, limited by tokens
+time_double_9_tokens = time_subprocess(["make", "test2", "-j", "9"])
+# Parallel, unlimited by tokens
+time_double_12_tokens = time_subprocess(["make", "test2", "-j", "12"])
+
+
+assert (
+    time_double_12_tokens < time_double_9_tokens < time_double
+), "Expected double test run with more tokens to be faster"
+assert (
+    time_single_5_tokens < time_double_9_tokens
+), "Expected single test to be faster than token-limited double run"
+assert (
+    math.fabs(time_single_5_tokens - time_double_12_tokens) < 0.8
+), "Expected single test to be about the same as token-unlimited double run"
