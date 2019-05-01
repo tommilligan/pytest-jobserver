@@ -7,7 +7,10 @@ from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 
 from .configure import jobserver_from_env, jobserver_from_options
+from .metadata import VERSION
 from .system import FileDescriptorsRW
+
+__version__ = VERSION
 
 
 class JobserverPlugin(object):
@@ -19,6 +22,11 @@ class JobserverPlugin(object):
         token = os.read(self._fd_read, 1)
         yield
         os.write(self._fd_write, token)
+
+    def pytest_report_header(self, config: Config) -> str:
+        return "jobserver: configured at file descriptors (read: {}, write: {})".format(
+            self._fd_read, self._fd_write
+        )
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -32,11 +40,7 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 def pytest_configure(config: Config) -> None:
-    jobserver_fds = jobserver_from_options(config)
-    if jobserver_fds is None:
-        jobserver_fds = jobserver_from_env(config)
-
+    jobserver_fds = jobserver_from_options(config) or jobserver_from_env(config)
     if jobserver_fds:
-        print("jobserver configured with file descriptors: {}".format(jobserver_fds))
         plugin = JobserverPlugin(jobserver_fds)
         config.pluginmanager.register(plugin)
