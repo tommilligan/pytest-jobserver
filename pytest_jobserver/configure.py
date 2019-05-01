@@ -1,7 +1,7 @@
 import argparse
 import os
 import shlex
-from typing import Any, Optional
+from typing import Optional
 
 import pytest
 from _pytest.config import Config
@@ -9,8 +9,7 @@ from _pytest.config.argparsing import Parser
 
 from .filesystem import FileDescriptor, FileDescriptorsRW, is_fifo, is_rw_ok
 from .metadata import VERSION
-from .plugin.plain import JobserverPlugin
-from .plugin.xdist import JobserverXdistPlugin
+from .plugin import JobserverPlugin
 
 __version__ = VERSION
 
@@ -21,7 +20,7 @@ def pytest_addoption(parser: Parser) -> None:
         "--jobserver",
         action="store",
         metavar="FILE",
-        help="Named pipe to use as jobserver.",
+        help="Named pipe to use as jobserver. If xdist is active, this is the filepath as seen by the worker nodes.",
     )
 
 
@@ -45,7 +44,7 @@ def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
     return (fd_rw, fd_rw)
 
 
-def jobserver_from_env() -> Optional[FileDescriptorsRW]:
+def jobserver_from_env(config: Config) -> Optional[FileDescriptorsRW]:
     makeflags = (
         os.environ.get("CARGO_MAKEFLAGS")
         or os.environ.get("MAKEFLAGS")
@@ -64,17 +63,22 @@ def jobserver_from_env() -> Optional[FileDescriptorsRW]:
     if fds is None:
         return None
 
+    if config.pluginmanager.hasplugin("xdist"):
+        raise pytest.UsageError(
+            "pytest-jobserver does not support using pytest-xdist with MAKEFLAGS"
+        )
+
     fd_read, fd_write = tuple(FileDescriptor(int(fd)) for fd in fds.split(","))
 
     return (fd_read, fd_write)
 
 
 def pytest_configure(config: Config) -> None:
-    jobserver_fds = jobserver_from_options(config) or jobserver_from_env()
+    jobserver_fds = jobserver_from_options(config)
+    if jobserver_fds is None:
+        jobserver_fds = jobserver_from_env(config)
+
     if jobserver_fds:
         print("Configuring jobserver with fds: {}".format(jobserver_fds))
-        if config.pluginmanager.hasplugin("xdist"):
-            plugin: Any = JobserverXdistPlugin(jobserver_fds)
-        else:
-            plugin = JobserverPlugin(jobserver_fds)
+        plugin = JobserverPlugin(jobserver_fds)
         config.pluginmanager.register(plugin)

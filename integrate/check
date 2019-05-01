@@ -1,41 +1,124 @@
 #!/usr/bin/env python
 
 import math
+import os
 import subprocess
+import tempfile
 import time
-from typing import Sequence
+from typing import Iterable, List, Sequence
+
+from pytest_jobserver.test.jobserver import make_jobserver
 
 
-def time_subprocess(args: Sequence[str]) -> float:
+def time_subprocesses(name: str, subprocesses_args: Iterable[Sequence[str]]) -> float:
+    """Time several suprocesses running in parallel.
+
+    If `check` is set, expect the given exit code (default 0).
+    """
+    print()
+    print("> Running: {}".format(name))
     start = time.time()
-    subprocess.run(args, check=True)
+    subprocesses = []
+    for subprocess_args in subprocesses_args:
+        subprocesses.append(subprocess.Popen(subprocess_args))
+    for subprocess_ in subprocesses:
+        retcode = subprocess_.wait()
+        assert retcode == 0
     end = time.time()
     duration = end - start
-    print("Integration test subprocess duration: {}".format(duration))
+    print("> Completed: {}, duration: {}".format(name, duration))
+    print()
     return duration
+
+
+# Named pipe tests - jobserver spawned manually by us. pytest-xdist compatible
+
+# Sequential
+with tempfile.TemporaryDirectory() as tmpdirname:
+    jobserver_path_1 = make_jobserver(tmpdirname, "jobserver_1", 1)
+    jobserver_path_4 = make_jobserver(tmpdirname, "jobserver_4", 4)
+
+    def pytest_with_jobserver(path: str) -> List[str]:
+        return ["pytest", "-s", "-n4", "--jobserver", path]
+
+    # More tokens should run tests in parallel in a file
+    time_single_1 = time_subprocesses(
+        "Single (1 tokens)", [pytest_with_jobserver(jobserver_path_1)]
+    )
+    time_single_4 = time_subprocesses(
+        "Single (4 tokens)", [pytest_with_jobserver(jobserver_path_4)]
+    )
+    assert (
+        time_single_4 < 4.0 < time_single_1
+    ), "Expected xdist to run test cases in parallel with multiple tokens"
+
+    # More tokens should run tests in parallel across master nodes
+    time_double_1_tokens = time_subprocesses(
+        "Double (1 tokens)",
+        [
+            pytest_with_jobserver(jobserver_path_1),
+            pytest_with_jobserver(jobserver_path_1),
+        ],
+    )
+    time_double_4_tokens = time_subprocesses(
+        "Double (4 tokens)",
+        [
+            pytest_with_jobserver(jobserver_path_4),
+            pytest_with_jobserver(jobserver_path_4),
+        ],
+    )
+    assert (
+        time_double_4_tokens < 8.0 < time_double_1_tokens
+    ), "Expected xdist to run test master nodes in parallel with multiple tokens"
+    assert time_double_4_tokens < (
+        time_double_1_tokens / 2.0
+    ), "Expected xdist to run at least 2x faster with 4x tokens"
+
+
+# Makefile tests - jobserver spawned automatically by make. Plain pytest only.
+
+# Check we error if we try to load jobserver from env, but xdist is active
+makeflags_env = os.environ.copy()
+makeflags_env["MAKEFLAGS"] = "w -j --jobserver-fds=7,8"
+complete_process = subprocess.run(
+    ["pytest", "-n2", "4"], env=makeflags_env, stderr=subprocess.PIPE
+)
+assert (
+    complete_process.returncode == 4
+), "Expected pytest would fail to run with MAKEFLAGS and xdist"
+assert (
+    b"ERROR: pytest-jobserver does not support using pytest-xdist with MAKEFLAGS"
+    in complete_process.stderr
+), "Expected pytest would warn about failure with MAKEFLAGS and xdist"
 
 
 # Single test master
 # Sequential
-time_single = time_subprocess(["make", "test"])
-# Parallel, unlimited by tokens
-time_single_5_tokens = time_subprocess(["make", "test", "-j", "5"])
+time_single = time_subprocesses("Single", [["make", "test"]])
 
 # Two test masters, linked by the jobserver
 # Sequential
-time_double = time_subprocess(["make", "test2"])
+time_double = time_subprocesses("Double", [["make", "test2"]])
 # Parallel, limited by tokens
-time_double_9_tokens = time_subprocess(["make", "test2", "-j", "9"])
+time_double_1_tokens = time_subprocesses(
+    "Double (1 tokens)", [["make", "test2", "-j", "1"]]
+)
 # Parallel, unlimited by tokens
-time_double_12_tokens = time_subprocess(["make", "test2", "-j", "12"])
+# TODO: not sure why we need 4 tokens here. make tasks themselves taking tokens?
+time_double_4_tokens = time_subprocesses(
+    "Double (4 tokens)", [["make", "test2", "-j", "4"]]
+)
 
 
 assert (
-    time_double_12_tokens < time_double_9_tokens < time_double
+    time_double_4_tokens < time_double
+), "Expected double test run in parallel to be faster"
+assert (
+    time_double_4_tokens < time_double_1_tokens
 ), "Expected double test run with more tokens to be faster"
 assert (
-    time_single_5_tokens < time_double_9_tokens
+    time_single < time_double_1_tokens
 ), "Expected single test to be faster than token-limited double run"
 assert (
-    math.fabs(time_single_5_tokens - time_double_12_tokens) < 0.8
+    math.fabs(time_single - time_double_4_tokens) < 1.0
 ), "Expected single test to be about the same as token-unlimited double run"

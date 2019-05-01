@@ -1,33 +1,11 @@
-import os
+import time
 from typing import Any
 
 from pytest_jobserver.filesystem import is_fifo, is_rw_ok
 
+from .jobserver import make_jobserver
+
 TestDir = Any
-
-
-# Test hekpers
-
-
-def make_jobserver(dir_: str, name: str, size: int) -> str:
-    """Create a fifo with the given name and directory. Return a filehandle.
-
-    :param str dir_: Directory to create jobserver fifo in.
-    :param str name: Name of fifo.
-    :param int size: Number of tokens to preload into the jobserver.
-    """
-    # Create our fifo
-    fifo_path = os.path.join(dir_, name)
-    os.mkfifo(fifo_path)
-
-    # Open it as nonblocking, so we can write tokens into it straight away
-    fifo = os.open(fifo_path, os.O_RDWR | os.O_NONBLOCK)
-
-    # Write some tokens into it
-    tokens = b"X" * size
-    os.write(fifo, tokens)
-
-    return fifo_path
 
 
 # Actual tests
@@ -101,9 +79,29 @@ def test_server_xdist(testdir: TestDir) -> None:
     """
     )
 
-    make_jobserver(testdir.tmpdir, "jobserver_fifo", 4)
-    result = testdir.runpytest("-v", "--jobserver", "jobserver_fifo", "-n2")
+    make_jobserver(testdir.tmpdir, "jobserver_fifo_1", 1)
+    make_jobserver(testdir.tmpdir, "jobserver_fifo_3", 3)
+    xdist_parallelism = "-n3"
+
+    start = time.time()
+    result = testdir.runpytest(
+        "-v", "--jobserver", "jobserver_fifo_3", xdist_parallelism
+    )
+    end = time.time()
+    duration_3 = end - start
     assert result.ret == 0
+
+    start = time.time()
+    result = testdir.runpytest(
+        "-v", "--jobserver", "jobserver_fifo_1", xdist_parallelism
+    )
+    end = time.time()
+    duration_1 = end - start
+    assert result.ret == 0
+
+    assert duration_3 < (
+        duration_1 / 2.0
+    ), "Expected xdist to run at least 2x faster with 3x tokens"
 
 
 def test_server_not_found(testdir: TestDir) -> None:

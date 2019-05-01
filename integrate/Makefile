@@ -4,13 +4,13 @@ check:
 	+./check
 
 testA:
-	+pytest -s -n2
+	+pytest -s -p no:xdist
 
 testB:
-	+pytest -s -n2
+	+pytest -s -p no:xdist
 
 test: testA
 	
-	    
+
 test2: testA testB
 	

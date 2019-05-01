@@ -4,7 +4,7 @@ from typing import Any, Iterator
 import pytest
 from _pytest.nodes import Item
 
-from ..filesystem import FileDescriptorsRW
+from .filesystem import FileDescriptorsRW
 
 
 class JobserverPlugin(object):
