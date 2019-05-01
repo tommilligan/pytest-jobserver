@@ -57,7 +57,7 @@ def test_server_xdist(testdir: TestDir) -> None:
         import pytest
 
         def pause():
-            sleep(0.5)
+            sleep(1)
 
         def test_0(request):
             pause()
