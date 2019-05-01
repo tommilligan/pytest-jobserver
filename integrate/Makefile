@@ -1,13 +1,10 @@
 .PHONY: check test
 
-check:
-	+./check
-
 testA:
-	+pytest -s -p no:xdist
+	+pytest -s -p no:xdist test_long.py
 
 testB:
-	+pytest -s -p no:xdist
+	+pytest -s -p no:xdist test_long.py
 
 test: testA
 	
