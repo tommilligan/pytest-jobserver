@@ -54,6 +54,12 @@ See the top level `Makefile` and `.circleci/config.yml` for the development flow
 
 ## Changelog
 
+### 0.2.2
+
+#### Bugfixes
+
+- move jobserver status on startup to official `pytest_report_header` hook
+
 ### 0.2.1
 
 #### Bugfixes

@@ -6,7 +6,6 @@ from typing import Optional
 import pytest
 from _pytest.config import Config
 
-from .metadata import VERSION
 from .system import (
     FileDescriptor,
     FileDescriptorsRW,
@@ -14,8 +13,6 @@ from .system import (
     is_fifo,
     is_rw_ok,
 )
-
-__version__ = VERSION
 
 MAKEFLAGS_ENVIRONMENT_VARIABLES = ("CARGO_MAKEFLAGS", "MAKEFLAGS", "MFLAGS")
 

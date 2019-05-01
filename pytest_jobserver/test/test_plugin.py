@@ -43,6 +43,9 @@ def test_server(testdir: TestDir) -> None:
     result = testdir.runpytest("-v", "--jobserver", "jobserver_fifo")
 
     result.stdout.fnmatch_lines(["*::test_plugin_setup PASSED*"])
+    result.stdout.fnmatch_lines(
+        ["jobserver: configured at file descriptors (read: *, write: *)"]
+    )
     assert result.ret == 0
 
 
