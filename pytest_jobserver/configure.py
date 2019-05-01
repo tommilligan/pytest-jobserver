@@ -5,31 +5,19 @@ from typing import Optional
 
 import pytest
 from _pytest.config import Config
-from _pytest.config.argparsing import Parser
 
-from .filesystem import (
+from .metadata import VERSION
+from .system import (
     FileDescriptor,
     FileDescriptorsRW,
-    first_environ_get,
+    environ_get_first,
     is_fifo,
     is_rw_ok,
 )
-from .metadata import VERSION
-from .plugin import JobserverPlugin
 
 __version__ = VERSION
 
 MAKEFLAGS_ENVIRONMENT_VARIABLES = ("CARGO_MAKEFLAGS", "MAKEFLAGS", "MFLAGS")
-
-
-def pytest_addoption(parser: Parser) -> None:
-    group = parser.getgroup("jobserver")
-    group.addoption(
-        "--jobserver",
-        action="store",
-        metavar="FILE",
-        help="Named pipe to use as jobserver. If xdist is active, this is the filepath as seen by the worker nodes.",
-    )
 
 
 def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
@@ -53,7 +41,7 @@ def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
 
 
 def jobserver_from_env(config: Config) -> Optional[FileDescriptorsRW]:
-    makeflags = first_environ_get(MAKEFLAGS_ENVIRONMENT_VARIABLES)
+    makeflags = environ_get_first(MAKEFLAGS_ENVIRONMENT_VARIABLES)
     if makeflags is None:
         return None
 
@@ -74,14 +62,3 @@ def jobserver_from_env(config: Config) -> Optional[FileDescriptorsRW]:
     fd_read, fd_write = tuple(FileDescriptor(int(fd)) for fd in fds.split(","))
 
     return (fd_read, fd_write)
-
-
-def pytest_configure(config: Config) -> None:
-    jobserver_fds = jobserver_from_options(config)
-    if jobserver_fds is None:
-        jobserver_fds = jobserver_from_env(config)
-
-    if jobserver_fds:
-        print("Configuring jobserver with fds: {}".format(jobserver_fds))
-        plugin = JobserverPlugin(jobserver_fds)
-        config.pluginmanager.register(plugin)
