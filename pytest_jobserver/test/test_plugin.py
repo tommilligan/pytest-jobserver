@@ -1,7 +1,7 @@
 import time
 from typing import Any
 
-from pytest_jobserver.filesystem import is_fifo, is_rw_ok
+from pytest_jobserver.configure import MAKEFLAGS_ENVIRONMENT_VARIABLES
 
 from .jobserver import make_jobserver
 
@@ -11,21 +11,6 @@ TestDir = Any
 # Actual tests
 
 
-def test_is_fifo(testdir: TestDir) -> None:
-    fifo_path = make_jobserver(testdir.tmpdir, "jobserver_fifo", 0)
-    assert is_fifo(fifo_path) is True
-
-    not_fifo_path = testdir.makefile(".txt", jobserver="X")
-    assert is_fifo(not_fifo_path) is False
-
-
-def test_is_rw_ok(testdir: TestDir) -> None:
-    fifo_path = make_jobserver(testdir.tmpdir, "jobserver_fifo", 0)
-    assert is_rw_ok(fifo_path) is True
-
-    assert is_rw_ok("/") is False
-
-
 def test_help_message(testdir: TestDir) -> None:
     result = testdir.runpytest("--help")
     # Check our options have been registered
@@ -33,13 +18,15 @@ def test_help_message(testdir: TestDir) -> None:
 
 
 def test_noop(testdir: TestDir) -> None:
-    """Test that jobserver is not set, everything is fine."""
+    """Test that if nothing is set, everything is fine."""
     testdir.makepyfile(
         """
         def test_pass(request):
             pass
     """
     )
+    for makeflag_environment_variable in MAKEFLAGS_ENVIRONMENT_VARIABLES:
+        testdir.monkeypatch.delenv(makeflag_environment_variable, raising=False)
     result = testdir.runpytest("-v")
     assert result.ret == 0
 

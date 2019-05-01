@@ -7,11 +7,19 @@ import pytest
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 
-from .filesystem import FileDescriptor, FileDescriptorsRW, is_fifo, is_rw_ok
+from .filesystem import (
+    FileDescriptor,
+    FileDescriptorsRW,
+    first_environ_get,
+    is_fifo,
+    is_rw_ok,
+)
 from .metadata import VERSION
 from .plugin import JobserverPlugin
 
 __version__ = VERSION
+
+MAKEFLAGS_ENVIRONMENT_VARIABLES = ("CARGO_MAKEFLAGS", "MAKEFLAGS", "MFLAGS")
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -45,12 +53,7 @@ def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
 
 
 def jobserver_from_env(config: Config) -> Optional[FileDescriptorsRW]:
-    makeflags = (
-        os.environ.get("CARGO_MAKEFLAGS")
-        or os.environ.get("MAKEFLAGS")
-        or os.environ.get("MFLAGS")
-    )
-
+    makeflags = first_environ_get(MAKEFLAGS_ENVIRONMENT_VARIABLES)
     if makeflags is None:
         return None
 

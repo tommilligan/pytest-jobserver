@@ -1,5 +1,4 @@
 import math
-import os
 import subprocess
 import tempfile
 import time
@@ -93,22 +92,6 @@ def test_xdist_double(jobserver_path_1, jobserver_path_4):
 
 
 # Makefile tests - jobserver spawned automatically by make. Plain pytest only.
-
-
-def test_make_xdist_fails():
-    """Check we error if we try to load jobserver from env, but xdist is active"""
-    makeflags_env = os.environ.copy()
-    makeflags_env["MAKEFLAGS"] = "w -j --jobserver-fds=7,8"
-    complete_process = subprocess.run(
-        ["pytest", "-n2", "4"], env=makeflags_env, stderr=subprocess.PIPE
-    )
-    assert (
-        complete_process.returncode == 4
-    ), "Expected pytest would fail to run with MAKEFLAGS and xdist"
-    assert (
-        b"ERROR: pytest-jobserver does not support using pytest-xdist with MAKEFLAGS"
-        in complete_process.stderr
-    ), "Expected pytest would warn about failure with MAKEFLAGS and xdist"
 
 
 def test_make():
