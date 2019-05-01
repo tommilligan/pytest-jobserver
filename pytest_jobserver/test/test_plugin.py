@@ -32,11 +32,21 @@ def test_help_message(testdir: TestDir) -> None:
     result.stdout.fnmatch_lines(["jobserver:", "*--jobserver*"])
 
 
+def test_noop(testdir: TestDir) -> None:
+    """Test that jobserver is not set, everything is fine."""
+    testdir.makepyfile(
+        """
+        def test_pass(request):
+            pass
+    """
+    )
+    result = testdir.runpytest("-v")
+    assert result.ret == 0
+
+
 def test_server(testdir: TestDir) -> None:
     testdir.makepyfile(
         """
-        import pytest
-
         def test_plugin_setup(request):
             assert 'jobserver_fifo' == request.config.getoption('jobserver')
     """
@@ -49,12 +59,26 @@ def test_server(testdir: TestDir) -> None:
     assert result.ret == 0
 
 
+def test_xdist_makeflags_fails(testdir: TestDir) -> None:
+    """Check we error if we try to load jobserver from env, but xdist is active"""
+    testdir.makepyfile(
+        """
+        def test_pass(request):
+            pass
+    """
+    )
+    testdir.monkeypatch.setenv("MAKEFLAGS", "w -j --jobserver-fds=7,8")
+    result = testdir.runpytest("-v", "-n2")
+    assert result.ret == 4, "Expected pytest would fail to run with MAKEFLAGS and xdist"
+    result.stderr.fnmatch_lines(
+        ["ERROR: pytest-jobserver does not support using pytest-xdist with MAKEFLAGS"]
+    )
+
+
 def test_server_xdist(testdir: TestDir) -> None:
     testdir.makepyfile(
         """
         from time import sleep
-
-        import pytest
 
         def pause():
             sleep(1)
@@ -107,8 +131,6 @@ def test_server_xdist(testdir: TestDir) -> None:
 def test_server_not_found(testdir: TestDir) -> None:
     testdir.makepyfile(
         """
-        import pytest
-
         def test_pass(request):
             pass
     """
@@ -124,8 +146,6 @@ def test_server_not_fifo(testdir: TestDir) -> None:
     testdir.makefile(".txt", jobserver="X")
     testdir.makepyfile(
         """
-        import pytest
-
         def test_pass(request):
             pass
     """
