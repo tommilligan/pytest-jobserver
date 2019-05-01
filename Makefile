@@ -8,7 +8,7 @@ clean:
 	rm -rf dist/*
 
 coverage:
-	coverage run --source pytest_jobserver -m py.test
+	coverage run --source pytest_jobserver -m py.test pytest_jobserver
 	codecov
 
 dev:
