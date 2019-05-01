@@ -5,7 +5,7 @@
 [![Code coverage](https://codecov.io/gh/tommilligan/pytest-jobserver/branch/master/graph/badge.svg)](https://codecov.io/gh/tommilligan/pytest-jobserver/branch/master)
 [![Build status](https://img.shields.io/circleci/project/github/tommilligan/pytest-jobserver/master.svg)](https://circleci.com/gh/tommilligan/pytest-jobserver)
 
-Parellise tests with posix jobserver.
+Limit parallel tests with posix jobserver.
 
 ## Installation
 
