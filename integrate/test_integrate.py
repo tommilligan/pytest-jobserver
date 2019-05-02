@@ -1,4 +1,5 @@
 import math
+import os
 import subprocess
 import tempfile
 import time
@@ -89,6 +90,23 @@ def test_xdist_double(jobserver_path_1, jobserver_path_4):
     assert time_double_4_tokens < (
         time_double_1_tokens / 2.0
     ), "Expected xdist to run at least 2x faster with 4x tokens"
+
+
+def test_xdist_oserror(jobserver_path_1):
+    """Test suite should fail if the jobserver is removed"""
+
+    subprocess_ = subprocess.Popen(
+        pytest_xdist_jobserver_args(jobserver_path_1),
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    time.sleep(0.5)
+    os.remove(jobserver_path_1)
+    retcode = subprocess_.wait()
+    stdout, stderr = subprocess_.communicate()
+    print(stdout)
+    print(stderr)
+    assert retcode == 1
 
 
 # Makefile tests - jobserver spawned automatically by make. Plain pytest only.
