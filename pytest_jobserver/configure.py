@@ -17,11 +17,7 @@ from .system import (
 MAKEFLAGS_ENVIRONMENT_VARIABLES = ("CARGO_MAKEFLAGS", "MAKEFLAGS", "MFLAGS")
 
 
-def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
-    jobserver_path = config.getoption("jobserver", default=None)
-    if jobserver_path is None:
-        return None
-
+def path_to_file_descriptors(jobserver_path: str) -> Optional[FileDescriptorsRW]:
     if os.path.exists(jobserver_path) is False:
         raise pytest.UsageError("jobserver doesn't exist: {}".format(jobserver_path))
 
@@ -37,7 +33,17 @@ def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
     return (fd_rw, fd_rw)
 
 
-def jobserver_from_env(config: Config) -> Optional[FileDescriptorsRW]:
+def jobserver_from_options(config: Config) -> Optional[FileDescriptorsRW]:
+    jobserver_path = config.getoption("jobserver", default=None)
+    return path_to_file_descriptors(jobserver_path) if jobserver_path else None
+
+
+def jobserver_from_env_pytest() -> Optional[FileDescriptorsRW]:
+    jobserver_path = os.environ.get("PYTEST_JOBSERVER")
+    return path_to_file_descriptors(jobserver_path) if jobserver_path else None
+
+
+def jobserver_from_env_make(config: Config) -> Optional[FileDescriptorsRW]:
     makeflags = environ_get_first(MAKEFLAGS_ENVIRONMENT_VARIABLES)
     if makeflags is None:
         return None
