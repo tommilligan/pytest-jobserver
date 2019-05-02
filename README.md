@@ -29,15 +29,18 @@ You should probably also use `pytest-xdist` to enable parallelism in the first p
 pytest -n4 --jobserver /opt/jobserver
 ```
 
-The plugin can also listen for an existing jobserver as created by another tool. Currently the environment variables it supports are:
+You can also pass this filepath via the `PYTEST_JOBSERVER` environment variable.
+
+### `make`
+
+The plugin can also listen for an existing jobserver as created by `make`.
+If a jobserver is not configured by filepath, `pytest-jobserver` will check the following environment variables in order:
 
 - `CARGO_MAKEFLAGS`
 - `MAKEFLAGS`
 - `MFLAGS`
 
-The environment variables will only be checked when the cli flag is not set.
-
-**Please note:** it is not supported to use both make environment variables and use `xdist`. The `execnet` protocol used by `xdist` does not support passing file descriptors to remote child processes.
+**Please note:** it is not possible to use one of these environment variables with `pytest-xdist`. The `execnet` protocol used by `xdist` does not support passing file descriptors to remote child processes.
 
 ## Implementation
 
@@ -53,6 +56,12 @@ See the top level `Makefile` and `.circleci/config.yml` for the development flow
 - `make integrate` to run integration tests
 
 ## Changelog
+
+### 0.3.0
+
+#### Features
+
+- a jobserver filepath can also be configured by the `PYTEST_JOBSERVER` environment variable
 
 ### 0.2.2
 

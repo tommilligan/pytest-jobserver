@@ -31,7 +31,7 @@ def test_noop(testdir: TestDir) -> None:
     assert result.ret == 0
 
 
-def test_server(testdir: TestDir) -> None:
+def test_config_options(testdir: TestDir) -> None:
     testdir.makepyfile(
         """
         def test_plugin_setup(request):
@@ -43,6 +43,25 @@ def test_server(testdir: TestDir) -> None:
     result = testdir.runpytest("-v", "--jobserver", "jobserver_fifo")
 
     result.stdout.fnmatch_lines(["*::test_plugin_setup PASSED*"])
+    result.stdout.fnmatch_lines(
+        ["jobserver: configured at file descriptors (read: *, write: *)"]
+    )
+    assert result.ret == 0
+
+
+def test_config_env_pytest(testdir: TestDir) -> None:
+    testdir.makepyfile(
+        """
+        def test_pass(request):
+            pass
+    """
+    )
+    make_jobserver(testdir.tmpdir, "jobserver_fifo", 1)
+    testdir.monkeypatch.setenv("PYTEST_JOBSERVER", "jobserver_fifo")
+
+    result = testdir.runpytest("-v")
+
+    result.stdout.fnmatch_lines(["*::test_pass PASSED*"])
     result.stdout.fnmatch_lines(
         ["jobserver: configured at file descriptors (read: *, write: *)"]
     )

@@ -6,7 +6,11 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 
-from .configure import jobserver_from_env, jobserver_from_options
+from .configure import (
+    jobserver_from_env_make,
+    jobserver_from_env_pytest,
+    jobserver_from_options,
+)
 from .metadata import VERSION
 from .system import FileDescriptorsRW
 
@@ -40,7 +44,11 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 def pytest_configure(config: Config) -> None:
-    jobserver_fds = jobserver_from_options(config) or jobserver_from_env(config)
+    jobserver_fds = (
+        jobserver_from_options(config)
+        or jobserver_from_env_pytest()
+        or jobserver_from_env_make(config)
+    )
     if jobserver_fds:
         plugin = JobserverPlugin(jobserver_fds)
         config.pluginmanager.register(plugin)
