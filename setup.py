@@ -3,7 +3,7 @@
 import codecs
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 from pytest_jobserver.metadata import VERSION
 
@@ -26,7 +26,7 @@ setup(
     keywords="pytest jobserver posix make cargo limit cap parallel limit",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
-    py_modules=["pytest_jobserver"],
+    packages=find_packages(),
     python_requires=">=3.4",
     install_requires=["pytest"],
     classifiers=[

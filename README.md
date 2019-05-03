@@ -57,6 +57,12 @@ See the top level `Makefile` and `.circleci/config.yml` for the development flow
 
 ## Changelog
 
+### 0.3.1
+
+#### Bugfixes
+
+- fix package installation with pip
+
 ### 0.3.0
 
 #### Features
