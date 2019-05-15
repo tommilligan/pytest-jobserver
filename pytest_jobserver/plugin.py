@@ -1,4 +1,5 @@
 import os
+import threading
 from typing import Any, Iterator
 
 import pytest
@@ -20,12 +21,19 @@ __version__ = VERSION
 class JobserverPlugin(object):
     def __init__(self, fds: FileDescriptorsRW):
         self._fd_read, self._fd_write = fds
+        self._thread_locals = threading.local()
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
     def pytest_runtest_protocol(self, item: Item) -> Iterator[Any]:
         token = os.read(self._fd_read, 1)
+        self._thread_locals.token = ord(token)
         yield
         os.write(self._fd_write, token)
+
+    @pytest.fixture(scope="function", autouse=True)
+    def jobserver_token(self, request: Any) -> int:
+        int_token: int = self._thread_locals.token
+        return int_token
 
     def pytest_report_header(self, config: Config) -> str:
         return "jobserver: configured at file descriptors (read: {}, write: {})".format(
