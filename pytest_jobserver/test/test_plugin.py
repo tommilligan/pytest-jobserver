@@ -68,6 +68,20 @@ def test_config_env_pytest(testdir: TestDir) -> None:
     assert result.ret == 0
 
 
+def test_jobserver_token_fixture(testdir: TestDir) -> None:
+    testdir.makepyfile(
+        f"""
+        def test_value(jobserver_token: int):
+            assert jobserver_token == 88
+    """
+    )
+    make_jobserver(testdir.tmpdir, "jobserver_fifo", 1)
+    testdir.monkeypatch.setenv("PYTEST_JOBSERVER", "jobserver_fifo")
+
+    result = testdir.runpytest("-v")
+    assert result.ret == 0
+
+
 def test_xdist_makeflags_fails(testdir: TestDir) -> None:
     """Check we error if we try to load jobserver from env, but xdist is active"""
     testdir.makepyfile(
