@@ -3,7 +3,7 @@
 import codecs
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 from pytest_jobserver.metadata import VERSION
 
@@ -30,7 +30,7 @@ setup(
     python_requires=">=3.4",
     install_requires=["pytest"],
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Framework :: Pytest",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Testing",

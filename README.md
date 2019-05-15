@@ -57,6 +57,13 @@ See the top level `Makefile` and `.circleci/config.yml` for the development flow
 
 ## Changelog
 
+### 1.0.0
+
+#### Features
+
+- jobserver token `int` value can be accessed within a test using the `jobserver_token` fixture
+- bump to `1.0.0` as the plugin is now stable, and in use by other projects
+
 ### 0.3.1
 
 #### Bugfixes
