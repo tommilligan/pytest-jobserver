@@ -11,7 +11,7 @@ flake8 = "~=3.7"
 mypy = "~=0.720"
 pytest-cov = "~=2.7"
 pytest-xdist = "~=1.28"
-twine = "~=1.14"
+twine = "~=1.15"
 wheel = "~=0.33"
 
 [packages]
