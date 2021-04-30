@@ -12,7 +12,8 @@ coverage:
 	codecov
 
 dev:
-	pip install "pipenv==2018.11.26"
+	pip install -U pip
+	pip install "pipenv==2020.11.15"
 	pipenv install --dev --deploy
 	pip install -e .
 
