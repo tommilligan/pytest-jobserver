@@ -70,7 +70,7 @@ def test_config_env_pytest(testdir: TestDir) -> None:
 
 def test_jobserver_token_fixture(testdir: TestDir) -> None:
     testdir.makepyfile(
-        f"""
+        """
         def test_value(jobserver_token: int):
             assert jobserver_token == 88
     """
