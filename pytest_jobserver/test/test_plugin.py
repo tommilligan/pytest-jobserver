@@ -62,6 +62,23 @@ def test_config_env_pytest(testdir: TestDir) -> None:
     assert result.ret == 0
 
 
+def test_config_makeflags_pytest(testdir: TestDir) -> None:
+    testdir.makepyfile("""
+        def test_pass(request):
+            pass
+    """)
+    make_jobserver(testdir.tmpdir, "jobserver_fifo", 1)
+    testdir.monkeypatch.setenv("MAKEFLAGS", "--jobserver-auth=fifo:jobserver_fifo")
+
+    result = testdir.runpytest("-v")
+
+    result.stdout.fnmatch_lines(["*::test_pass PASSED*"])
+    result.stdout.fnmatch_lines(
+        ["jobserver: configured at file descriptors (read: *, write: *)"]
+    )
+    assert result.ret == 0
+
+
 def test_jobserver_token_fixture(testdir: TestDir) -> None:
     testdir.makepyfile("""
         def test_value(jobserver_token: int):
@@ -84,7 +101,9 @@ def test_xdist_makeflags_fails(testdir: TestDir) -> None:
     result = testdir.runpytest("-v", "-n2")
     assert result.ret == 4, "Expected pytest would fail to run with MAKEFLAGS and xdist"
     result.stderr.fnmatch_lines(
-        ["ERROR: pytest-jobserver does not support using pytest-xdist with MAKEFLAGS"]
+        [
+            "ERROR: pytest-jobserver does not support using pytest-xdist with fd-based jobserver in MAKEFLAGS"
+        ]
     )
 
 

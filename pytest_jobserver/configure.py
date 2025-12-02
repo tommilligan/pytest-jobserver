@@ -53,13 +53,16 @@ def jobserver_from_env_make(config: Config) -> Optional[FileDescriptorsRW]:
     parser.add_argument("--jobserver-auth", default=None)
     args, _ = parser.parse_known_args(shlex.split(makeflags))
 
+    if args.jobserver_auth is not None and args.jobserver_auth.startswith("fifo:"):
+        return path_to_file_descriptors(args.jobserver_auth[5:])
+
     fds = args.jobserver_fds or args.jobserver_auth
     if fds is None:
         return None
 
     if config.pluginmanager.hasplugin("xdist"):
         raise pytest.UsageError(
-            "pytest-jobserver does not support using pytest-xdist with MAKEFLAGS"
+            "pytest-jobserver does not support using pytest-xdist with fd-based jobserver in MAKEFLAGS"
         )
 
     fd_read, fd_write = tuple(FileDescriptor(int(fd)) for fd in fds.split(","))
