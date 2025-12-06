@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import pytest
 
-from pytest_jobserver.system import environ_get_first, is_fifo, is_rw_ok
+from pytest_jobserver.system import environ_get_first, is_rw_ok
 
 from .jobserver import make_jobserver
 
@@ -23,14 +23,6 @@ def test_environ_get_first(
     setenv_if_not_none("A", env_a)
     setenv_if_not_none("B", env_b)
     assert environ_get_first(("A", "B")) == env_expected
-
-
-def test_is_fifo(testdir: TestDir) -> None:
-    fifo_path = make_jobserver(testdir.tmpdir, "jobserver_fifo", 0)
-    assert is_fifo(fifo_path) is True
-
-    not_fifo_path = testdir.makefile(".txt", jobserver="X")
-    assert is_fifo(not_fifo_path) is False
 
 
 def test_is_rw_ok(testdir: TestDir) -> None:
