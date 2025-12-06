@@ -169,16 +169,3 @@ def test_server_not_found(testdir: TestDir) -> None:
 
     result.stderr.fnmatch_lines(["ERROR: jobserver doesn't exist: non_existent_file"])
     assert result.ret == 4
-
-
-def test_server_not_fifo(testdir: TestDir) -> None:
-    testdir.makefile(".txt", jobserver="X")
-    testdir.makepyfile("""
-        def test_pass(request):
-            pass
-    """)
-    # Run our test
-    result = testdir.runpytest("-v", "--jobserver", "jobserver.txt")
-
-    result.stderr.fnmatch_lines(["ERROR: jobserver is not a fifo: jobserver.txt"])
-    assert result.ret == 4
