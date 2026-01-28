@@ -8,12 +8,12 @@ clean:
 	rm -rf dist/*
 
 coverage:
-	coverage run --source pytest_jobserver -m py.test pytest_jobserver
+	coverage run --source pytest_jobserver -m pytest pytest_jobserver
 	codecov
 
 dev:
 	pip install -U pip
-	pip install "pipenv==2020.11.15"
+	pip install "pipenv==2026.0.3"
 	pipenv install --dev --deploy
 	pip install -e .
 
@@ -35,7 +35,7 @@ pypi-install:
 
 test:
 	black --check --diff .
-	flake8
+	flake8 pytest_jobserver
 	mypy pytest_jobserver
 	pytest pytest_jobserver -p no:jobserver
 
