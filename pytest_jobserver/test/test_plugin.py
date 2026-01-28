@@ -19,12 +19,10 @@ def test_help_message(testdir: TestDir) -> None:
 
 def test_noop(testdir: TestDir) -> None:
     """Test that if nothing is set, everything is fine."""
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         def test_pass(request):
             pass
-    """
-    )
+    """)
     for makeflag_environment_variable in MAKEFLAGS_ENVIRONMENT_VARIABLES:
         testdir.monkeypatch.delenv(makeflag_environment_variable, raising=False)
     result = testdir.runpytest("-v")
@@ -32,12 +30,10 @@ def test_noop(testdir: TestDir) -> None:
 
 
 def test_config_options(testdir: TestDir) -> None:
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         def test_plugin_setup(request):
             assert 'jobserver_fifo' == request.config.getoption('jobserver')
-    """
-    )
+    """)
     make_jobserver(testdir.tmpdir, "jobserver_fifo", 1)
 
     result = testdir.runpytest("-v", "--jobserver", "jobserver_fifo")
@@ -50,12 +46,10 @@ def test_config_options(testdir: TestDir) -> None:
 
 
 def test_config_env_pytest(testdir: TestDir) -> None:
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         def test_pass(request):
             pass
-    """
-    )
+    """)
     make_jobserver(testdir.tmpdir, "jobserver_fifo", 1)
     testdir.monkeypatch.setenv("PYTEST_JOBSERVER", "jobserver_fifo")
 
@@ -69,12 +63,10 @@ def test_config_env_pytest(testdir: TestDir) -> None:
 
 
 def test_jobserver_token_fixture(testdir: TestDir) -> None:
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         def test_value(jobserver_token: int):
             assert jobserver_token == 88
-    """
-    )
+    """)
     make_jobserver(testdir.tmpdir, "jobserver_fifo", 1)
     testdir.monkeypatch.setenv("PYTEST_JOBSERVER", "jobserver_fifo")
 
@@ -84,12 +76,10 @@ def test_jobserver_token_fixture(testdir: TestDir) -> None:
 
 def test_xdist_makeflags_fails(testdir: TestDir) -> None:
     """Check we error if we try to load jobserver from env, but xdist is active"""
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         def test_pass(request):
             pass
-    """
-    )
+    """)
     testdir.monkeypatch.setenv("MAKEFLAGS", "w -j --jobserver-fds=7,8")
     result = testdir.runpytest("-v", "-n2")
     assert result.ret == 4, "Expected pytest would fail to run with MAKEFLAGS and xdist"
@@ -99,8 +89,7 @@ def test_xdist_makeflags_fails(testdir: TestDir) -> None:
 
 
 def test_server_xdist(testdir: TestDir) -> None:
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         from time import sleep
 
         def pause():
@@ -123,8 +112,7 @@ def test_server_xdist(testdir: TestDir) -> None:
 
         def test_5(request):
             pause()
-    """
-    )
+    """)
 
     make_jobserver(testdir.tmpdir, "jobserver_fifo_1", 1)
     make_jobserver(testdir.tmpdir, "jobserver_fifo_3", 3)
@@ -152,12 +140,10 @@ def test_server_xdist(testdir: TestDir) -> None:
 
 
 def test_server_not_found(testdir: TestDir) -> None:
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         def test_pass(request):
             pass
-    """
-    )
+    """)
     # Run our test
     result = testdir.runpytest("-v", "--jobserver", "non_existent_file")
 
@@ -167,12 +153,10 @@ def test_server_not_found(testdir: TestDir) -> None:
 
 def test_server_not_fifo(testdir: TestDir) -> None:
     testdir.makefile(".txt", jobserver="X")
-    testdir.makepyfile(
-        """
+    testdir.makepyfile("""
         def test_pass(request):
             pass
-    """
-    )
+    """)
     # Run our test
     result = testdir.runpytest("-v", "--jobserver", "jobserver.txt")
 

@@ -4,18 +4,18 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-black = "==18.9b0"
+black = "~=26.1.0"
 codecov = "~=2.0"
-coverage = "~=5.1"
-flake8 = "~=3.7"
-mypy = "~=0.770"
-pytest-cov = "~=2.8"
-pytest-xdist = "~=2.2"
-twine = "~=3.1"
-wheel = "~=0.36"
+coverage = "~=7.13"
+flake8 = "~=7.3"
+mypy = "~=1.19"
+pytest-cov = "~=7.0"
+pytest-xdist = "~=3.8"
+twine = "~=6.2"
+wheel = "~=0.46"
 
 [packages]
-pytest = "~=6.2"
+pytest = "~=9.0"
 
 [requires]
-python_version = "3.7"
+python_version = "3"
