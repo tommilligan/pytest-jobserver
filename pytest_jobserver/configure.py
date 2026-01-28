@@ -10,7 +10,6 @@ from .system import (
     FileDescriptor,
     FileDescriptorsRW,
     environ_get_first,
-    is_fifo,
     is_rw_ok,
 )
 
@@ -20,9 +19,6 @@ MAKEFLAGS_ENVIRONMENT_VARIABLES = ("CARGO_MAKEFLAGS", "MAKEFLAGS", "MFLAGS")
 def path_to_file_descriptors(jobserver_path: str) -> Optional[FileDescriptorsRW]:
     if os.path.exists(jobserver_path) is False:
         raise pytest.UsageError("jobserver doesn't exist: {}".format(jobserver_path))
-
-    if is_fifo(jobserver_path) is False:
-        raise pytest.UsageError("jobserver is not a fifo: {}".format(jobserver_path))
 
     if is_rw_ok(jobserver_path) is False:
         raise pytest.UsageError(
