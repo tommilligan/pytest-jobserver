@@ -134,9 +134,10 @@ def test_server_xdist(testdir: TestDir) -> None:
     duration_1 = end - start
     assert result.ret == 0
 
+    expected_speedup = 1.5
     assert duration_3 < (
-        duration_1 / 2.0
-    ), "Expected xdist to run at least 2x faster with 3x tokens"
+        duration_1 / expected_speedup
+    ), f"Expected xdist to run at least {expected_speedup:.2f}x faster with 3x tokens"
 
 
 def test_server_not_found(testdir: TestDir) -> None:

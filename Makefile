@@ -18,7 +18,7 @@ dev:
 	pip install -e .
 
 integrate:
-	cd integrate && pytest -p no:jobserver -p no:xdist test_integrate.py
+	cd integrate && pytest -vv -p no:jobserver -p no:xdist test_integrate.py
 
 lint:
 	black .
@@ -37,7 +37,7 @@ test:
 	black --check --diff .
 	flake8 pytest_jobserver
 	mypy pytest_jobserver
-	pytest pytest_jobserver -p no:jobserver
+	pytest -vv pytest_jobserver -p no:jobserver
 
 upload:
 	twine upload dist/*
