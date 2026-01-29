@@ -34,6 +34,11 @@ class JobserverPlugin(object):
         self._thread_locals = threading.local()
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
+    def pytest_collection(self, session: pytest.Session) -> Iterator[Any]:
+        with _hold_token(self._fds):
+            yield
+
+    @pytest.hookimpl(hookwrapper=True, tryfirst=True)
     def pytest_runtest_protocol(self, item: Item) -> Iterator[Any]:
         with _hold_token(self._fds) as token:
             self._thread_locals.token = token
