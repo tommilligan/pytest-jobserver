@@ -20,7 +20,14 @@ __version__ = VERSION
 
 
 @contextmanager
-def _hold_token(fds: FileDescriptorsRW) -> Iterator[int]:
+def _hold_token(fds: FileDescriptorsRW) -> Iterator[int | None]:
+    # The parent process has already acquired one token for us, so run
+    # one parallel job without a job token. For convenience, we will
+    # just run jobs from gw0 without tokens.
+    if os.environ.get("PYTEST_XDIST_WORKER", "gw0") == "gw0":
+        yield None
+        return
+
     fd_read, fd_write = fds
     token_byte = os.read(fd_read, 1)
     token_int = ord(token_byte)
