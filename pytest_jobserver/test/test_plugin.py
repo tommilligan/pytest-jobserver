@@ -81,13 +81,19 @@ def test_config_makeflags_pytest(testdir: TestDir) -> None:
 
 def test_jobserver_token_fixture(testdir: TestDir) -> None:
     testdir.makepyfile("""
-        def test_value(jobserver_token: int):
-            assert jobserver_token == 88
+        import pytest
+
+        @pytest.mark.parametrize("repeat", [0, 1])
+        def test_value(repeat: int, worker_id: str, jobserver_token: int | None):
+            if worker_id == "gw0":
+                assert jobserver_token is None
+            else:
+                assert jobserver_token == 88
     """)
-    make_jobserver(testdir.tmpdir, "jobserver_fifo", 1)
+    make_jobserver(testdir.tmpdir, "jobserver_fifo", 2)
     testdir.monkeypatch.setenv("PYTEST_JOBSERVER", "jobserver_fifo")
 
-    result = testdir.runpytest("-v")
+    result = testdir.runpytest("-v", "-n2")
     assert result.ret == 0
 
 
