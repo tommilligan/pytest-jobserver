@@ -20,7 +20,7 @@ setup(
     author_email="code@tommilligan.net",
     maintainer="Tom Milligan",
     maintainer_email="code@tommilligan.net",
-    license="Apache Software License 2.0",
+    license="Apache-2.0",
     url="https://github.com/tommilligan/pytest-jobserver",
     description="Limit parallel tests with posix jobserver.",
     keywords="pytest jobserver posix make cargo limit cap parallel limit",
@@ -41,7 +41,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Operating System :: POSIX",
         "Operating System :: POSIX :: Linux",
-        "License :: OSI Approved :: Apache Software License",
     ],
     entry_points={"pytest11": ["jobserver = pytest_jobserver.plugin"]},
 )

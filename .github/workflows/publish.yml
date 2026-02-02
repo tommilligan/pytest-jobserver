@@ -27,6 +27,8 @@ jobs:
         path: dist/
 
   publish-to-pypi:
+    needs:
+    - build
     name: "Publish to PyPI"
     runs-on: ubuntu-24.04
     environment:
