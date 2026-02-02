@@ -14,14 +14,18 @@ def jobserver_path(name, tokens):
         yield make_jobserver(tmpdirname, name, tokens)
 
 
+# A jobserver with 1 tokens.
+# Note that due to the implicit slot, this allows 2 jobs to run in parallel.
 @pytest.fixture(scope="function")
 def jobserver_path_1():
     yield from jobserver_path("jobserver_1", 1)
 
 
+# A jobserver with 3 tokens.
+# Note that due to the implicit slot, this allows 4 jobs to run in parallel.
 @pytest.fixture(scope="function")
-def jobserver_path_4():
-    yield from jobserver_path("jobserver_4", 4)
+def jobserver_path_3():
+    yield from jobserver_path("jobserver_3", 3)
 
 
 def time_subprocesses(name: str, subprocesses_args: Iterable[Sequence[str]]) -> float:
@@ -52,21 +56,21 @@ def pytest_xdist_jobserver_args(path: str) -> List[str]:
     return ["pytest", "-s", "-n4", "--jobserver", path, "test_long.py"]
 
 
-def test_xdist_single(jobserver_path_1, jobserver_path_4):
+def test_xdist_single(jobserver_path_1, jobserver_path_3):
     """More tokens should run tests in parallel in a file"""
 
-    time_single_1 = time_subprocesses(
+    time_single_2 = time_subprocesses(
         "Single (1 tokens)", [pytest_xdist_jobserver_args(jobserver_path_1)]
     )
-    time_single_4 = time_subprocesses(
-        "Single (4 tokens)", [pytest_xdist_jobserver_args(jobserver_path_4)]
+    time_single_6 = time_subprocesses(
+        "Single (3 tokens)", [pytest_xdist_jobserver_args(jobserver_path_3)]
     )
     assert (
-        time_single_4 < 4.0 < time_single_1
+        time_single_6 < 4.0 < time_single_2
     ), "Expected xdist to run test cases in parallel with multiple tokens"
 
 
-def test_xdist_double(jobserver_path_1, jobserver_path_4):
+def test_xdist_double(jobserver_path_1, jobserver_path_3):
     """More tokens should run tests in parallel across master nodes"""
 
     time_double_1_tokens = time_subprocesses(
@@ -77,10 +81,10 @@ def test_xdist_double(jobserver_path_1, jobserver_path_4):
         ],
     )
     time_double_4_tokens = time_subprocesses(
-        "Double (4 tokens)",
+        "Double (3 tokens)",
         [
-            pytest_xdist_jobserver_args(jobserver_path_4),
-            pytest_xdist_jobserver_args(jobserver_path_4),
+            pytest_xdist_jobserver_args(jobserver_path_3),
+            pytest_xdist_jobserver_args(jobserver_path_3),
         ],
     )
 

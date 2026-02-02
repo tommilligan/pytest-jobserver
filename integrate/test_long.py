@@ -16,3 +16,7 @@ def test_1(request):
 
 def test_2(request):
     pause()
+
+
+def test_3(request):
+    pause()

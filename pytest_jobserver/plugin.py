@@ -31,8 +31,11 @@ def _hold_token(fds: FileDescriptorsRW) -> Iterator[int | None]:
     fd_read, fd_write = fds
     token_byte = os.read(fd_read, 1)
     token_int = ord(token_byte)
-    yield token_int
-    os.write(fd_write, token_byte)
+    try:
+        yield token_int
+    finally:
+        # under all error conditions, the token MUST be returned to the jobserver
+        os.write(fd_write, token_byte)
 
 
 class JobserverPlugin(object):
